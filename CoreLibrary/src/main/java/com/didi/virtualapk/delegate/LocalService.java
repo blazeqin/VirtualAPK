@@ -40,6 +40,7 @@ import java.lang.reflect.Method;
 
 /**
  * @author johnsonlee
+ * 在当前进程中启动的占坑service
  */
 public class LocalService extends Service {
     private static final String TAG = Constants.TAG_PREFIX + "LocalService";
@@ -90,6 +91,7 @@ public class LocalService extends Service {
             return START_STICKY;
         }
         // ClassNotFoundException when unmarshalling in Android 5.1
+        //防止服务拒绝漏洞
         target.setExtrasClassLoader(plugin.getClassLoader());
         switch (command) {
             case EXTRA_COMMAND_START_SERVICE: {
@@ -98,13 +100,15 @@ public class LocalService extends Service {
                 Service service;
 
                 if (this.mPluginManager.getComponentsHandler().isServiceAvailable(component)) {
+                    //获取已经存在的service
                     service = this.mPluginManager.getComponentsHandler().getService(component);
                 } else {
                     try {
+                        //不存在，则调用无参构造创建service
                         service = (Service) plugin.getClassLoader().loadClass(component.getClassName()).newInstance();
 
                         Application app = plugin.getApplication();
-                        IBinder token = appThread.asBinder();
+                        IBinder token = appThread.asBinder();//token是IApplicationThread的binder对象
                         Method attach = service.getClass().getMethod("attach", Context.class, ActivityThread.class, String.class, IBinder.class, Application.class, Object.class);
                         IActivityManager am = mPluginManager.getActivityManager();
 

@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d("ryg", "onCreate cpu arch is "+ cpuArch);
         Log.d("ryg", "onCreate classloader is "+ getClassLoader());
 
-        if (hasPermission()) {
+        if (hasPermission()) {//获取读写权限
             Log.d(TAG,"loadPlugin");
 
             this.loadPlugin(this);

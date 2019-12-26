@@ -41,6 +41,9 @@ import java.lang.reflect.Method;
 
 /**
  * @author johnsonlee
+ * 这个动态代理对象干了些啥？
+ *  IActivityManager涵盖了四大组件的方法，就是AMS的代理类，这里只是处理了service相关的方法
+ *  处理方式就是修改intent，使用自己定义的localService和RemoteService
  */
 public class ActivityManagerProxy implements InvocationHandler {
 
@@ -155,6 +158,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         return 1;
     }
 
+    //比如IntentService，它需要调用stopSelf方法，而stopself会调用这个方法。
     protected Object stopServiceToken(Object proxy, Method method, Object[] args) throws Throwable {
         ComponentName component = (ComponentName) args[0];
         Intent target = new Intent().setComponent(component);
@@ -207,7 +211,7 @@ public class ActivityManagerProxy implements InvocationHandler {
         String pluginLocation = mPluginManager.getLoadedPlugin(target.getComponent()).getLocation();
 
         // start delegate service to run plugin service inside
-        boolean local = PluginUtil.isLocalService(serviceInfo);
+        boolean local = PluginUtil.isLocalService(serviceInfo);//判断是否在当前进程
         Class<? extends Service> delegate = local ? LocalService.class : RemoteService.class;
         Intent intent = new Intent();
         intent.setClass(mPluginManager.getHostContext(), delegate);

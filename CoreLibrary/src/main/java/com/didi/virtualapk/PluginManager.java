@@ -71,6 +71,7 @@ public class PluginManager {
     protected final Context mContext;
     protected final Application mApplication;
     protected ComponentsHandler mComponentsHandler;
+    //线程安全的hashmap,添加了读写分离锁；插件apk加载解析后会添加一条数据，key是packagename，loadedplugin包含apk的信息，即四大组件信息
     protected final Map<String, LoadedPlugin> mPlugins = new ConcurrentHashMap<>();
     protected final List<Callback> mCallbacks = new ArrayList<>();
 
@@ -212,24 +213,27 @@ public class PluginManager {
 
     /**
      * hookSystemServices, but need to compatible with Android O in future.
+     *  hook的AMS的aidl代理类， 重新创建一个新的代理类，主要覆写了service相关的方法
      */
     protected void hookSystemServices() {
         try {
             Singleton<IActivityManager> defaultSingleton;
-    
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            //反射拿到IActivityManager单例对象
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {//8.0
                 defaultSingleton = Reflector.on(ActivityManager.class).field("IActivityManagerSingleton").get();
             } else {
                 defaultSingleton = Reflector.on(ActivityManagerNative.class).field("gDefault").get();
             }
             IActivityManager origin = defaultSingleton.get();
+            //使用动态代理，设置一个代理类；就是将service相关的方法都替换了
             IActivityManager activityManagerProxy = (IActivityManager) Proxy.newProxyInstance(mContext.getClassLoader(), new Class[] { IActivityManager.class },
                 createActivityManagerProxy(origin));
 
-            // Hook IActivityManager from ActivityManagerNative
+            // Hook IActivityManager from ActivityManagerNative 将IActivityManager单例替换为代理类
             Reflector.with(defaultSingleton).field("mInstance").set(activityManagerProxy);
 
-            if (defaultSingleton.get() == activityManagerProxy) {
+            if (defaultSingleton.get() == activityManagerProxy) {//验证是否hook成功
                 this.mActivityManager = activityManagerProxy;
                 Log.d(TAG, "hookSystemServices succeed : " + mActivityManager);
             }

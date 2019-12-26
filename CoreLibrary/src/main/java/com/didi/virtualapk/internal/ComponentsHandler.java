@@ -78,6 +78,7 @@ public class ComponentsHandler {
         String targetPackageName = intent.getComponent().getPackageName();
         String targetClassName = intent.getComponent().getClassName();
         // search map and return specific launchmode stub activity
+        //如果启动的类是插件中的类时，将启动的包名和Activity类名存到了intent中，可以看到这里存储明显是为了后面恢复用的
         if (!targetPackageName.equals(mContext.getPackageName()) && mPluginManager.getLoadedPlugin(targetPackageName) != null) {
             intent.putExtra(Constants.KEY_IS_PLUGIN, true);
             intent.putExtra(Constants.KEY_TARGET_PACKAGE, targetPackageName);
@@ -86,6 +87,7 @@ public class ComponentsHandler {
         }
     }
 
+    //从插件解析的信息里查找到要启动的类的信息，然后根据启动类的信息，创建占坑activity，设置到intent中
     private void dispatchStubActivity(Intent intent) {
         ComponentName component = intent.getComponent();
         String targetClassName = intent.getComponent().getClassName();
@@ -125,7 +127,7 @@ public class ComponentsHandler {
      * @param service
      */
     public void rememberService(ComponentName component, Service service) {
-        synchronized (this.mServices) {
+        synchronized (this.mServices) {//考虑线程安全问题
             this.mServices.put(component, service);
             this.mServiceCounters.put(service, new AtomicInteger(0));
         }

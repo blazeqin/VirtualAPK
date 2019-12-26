@@ -29,6 +29,9 @@ import java.io.File;
 
 /**
  * @author johnsonlee
+ * 其他进程的service启动时，占坑service
+ * 和localservice相比，有一点点的不一样。onbind返回空。
+ * 调用onStartCommand时，比localservice多了一些操作：判断插件是否加载了，没有加载的话进行加载
  */
 public class RemoteService extends LocalService {
     

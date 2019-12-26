@@ -86,17 +86,21 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         injectIntent(intent);
         return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
     }
-    
-    protected void injectIntent(Intent intent) {
+
+    //修改intent为占坑的activity
+  protected void injectIntent(Intent intent) {
+        //当component为null时，根据启动Activity时，配置的action，data,category等去已加载的plugin中匹配到确定的Activity
         mPluginManager.getComponentsHandler().transformIntentToExplicitAsNeeded(intent);
         // null component is an implicitly intent
         if (intent.getComponent() != null) {
             Log.i(TAG, String.format("execStartActivity[%s : %s]", intent.getComponent().getPackageName(), intent.getComponent().getClassName()));
             // resolve intent with Stub Activity if needed
+            //component不为空时
             this.mPluginManager.getComponentsHandler().markIntentIfNeeded(intent);
         }
     }
 
+    //从AMS调回来时，ActivityThread会调到这里； 换回要启动的类
     @Override
     public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         try {
@@ -104,15 +108,17 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             Log.i(TAG, String.format("newActivity[%s]", className));
             
         } catch (ClassNotFoundException e) {
+            //替换成要启动的类的component
             ComponentName component = PluginUtil.getComponent(intent);
             
-            if (component == null) {
+            if (component == null) {//用原来的Instrumentation去处理
                 return newActivity(mBase.newActivity(cl, className, intent));
             }
     
             String targetClassName = component.getClassName();
             Log.i(TAG, String.format("newActivity[%s : %s/%s]", className, component.getPackageName(), targetClassName));
-    
+
+            //根据packageName，获取对应插件包的信息
             LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(component);
     
             if (plugin == null) {
@@ -130,13 +136,14 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                 }
                 
                 Log.i(TAG, "Not found. starting the stub activity: " + StubActivity.class);
+                //跳转到对应包名的启动activity里
                 return newActivity(mBase.newActivity(cl, StubActivity.class.getName(), intent));
             }
-            
+            //正常创建activity，设置intent
             Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);
             activity.setIntent(intent);
     
-            // for 4.1+
+            // for 4.1+  设置resourcemanager为插件里的资源对象
             Reflector.QuietReflector.with(activity).field("mResources").set(plugin.getResources());
     
             return newActivity(activity);
@@ -167,7 +174,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
         final Intent intent = activity.getIntent();
         if (PluginUtil.isIntentFromPlugin(intent)) {
             Context base = activity.getBaseContext();
-            try {
+            try {//设置Resources， context， application
                 LoadedPlugin plugin = this.mPluginManager.getLoadedPlugin(intent);
                 Reflector.with(base).field("mResources").set(plugin.getResources());
                 Reflector reflector = Reflector.with(activity);
@@ -180,7 +187,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
                     activity.setRequestedOrientation(activityInfo.screenOrientation);
                 }
     
-                // for native activity
+                // for native activity 又包裹了intent。。。为啥？intent实现了Parcelable接口，可以序列化，传数据的一种形式。
                 ComponentName component = PluginUtil.getComponent(intent);
                 Intent wrapperIntent = new Intent(intent);
                 wrapperIntent.setClassName(component.getPackageName(), component.getClassName());
