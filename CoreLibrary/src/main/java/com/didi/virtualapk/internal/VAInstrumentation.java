@@ -201,7 +201,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
 
     @Override
     public boolean handleMessage(Message msg) {
-        if (msg.what == LAUNCH_ACTIVITY) {
+        if (msg.what == LAUNCH_ACTIVITY) {//设置主题
             // ActivityClientRecord r
             Object r = msg.obj;
             try {
@@ -222,7 +222,7 @@ public class VAInstrumentation extends Instrumentation implements Handler.Callba
             }
         }
 
-        return false;
+        return false;//只调用一次
     }
 
     @Override

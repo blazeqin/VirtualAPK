@@ -79,6 +79,7 @@ public class ComponentsHandler {
         String targetClassName = intent.getComponent().getClassName();
         // search map and return specific launchmode stub activity
         //如果启动的类是插件中的类时，将启动的包名和Activity类名存到了intent中，可以看到这里存储明显是为了后面恢复用的
+        //同一个包下是不能这么做的
         if (!targetPackageName.equals(mContext.getPackageName()) && mPluginManager.getLoadedPlugin(targetPackageName) != null) {
             intent.putExtra(Constants.KEY_IS_PLUGIN, true);
             intent.putExtra(Constants.KEY_TARGET_PACKAGE, targetPackageName);

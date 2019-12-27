@@ -21,6 +21,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.didi.virtualapk.demo.TestActivity;
 import com.didi.virtualapk.internal.LoadedPlugin;
 import com.didi.virtualapk.internal.PluginContentResolver;
 
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
         if (hasPermission()) {//获取读写权限
             Log.d(TAG,"loadPlugin");
 
-            this.loadPlugin(this);
+//            this.loadPlugin(this);
         } else {
             requestPermission();
         }
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 requestPermission();
             } else {
-                this.loadPlugin(this);
+//                this.loadPlugin(this);
             }
             return;
         }
@@ -117,7 +118,8 @@ public class MainActivity extends AppCompatActivity {
                 bookCursor.close();
             }
         } else if (v.getId() == R.id.about) {
-            showAbout();
+//            showAbout();
+            startActivity(new Intent(this, TestActivity.class));
         } else if (v.getId() == R.id.webview) {
             LinearLayout linearLayout = (LinearLayout) v.getParent();
             WebView webView = new WebView(this);
